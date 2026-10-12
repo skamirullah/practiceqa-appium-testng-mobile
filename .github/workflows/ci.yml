@@ -1,0 +1,70 @@
+name: Mobile tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Fast check on every commit: Chrome imitating a phone. No device or Appium needed.
+  emulation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - run: mvn -B test -Dplatform=emulation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulation-results
+          path: |
+            target/surefire-reports/
+            target/allure-results/
+
+  # Real Android emulator through Appium. Started by hand because it takes several minutes.
+  android:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Appium and the Android driver
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+      - name: Give the runner access to hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run the smoke suite on an Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          script: |
+            appium --allow-insecure=chromedriver_autodownload > appium.log 2>&1 &
+            npx --yes wait-on http-get://127.0.0.1:4723/status
+            mvn -B test -Dplatform=android -Dsuite=testng-smoke.xml -Ddevice.name=emulator-5554
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-results
+          path: |
+            target/surefire-reports/
+            target/allure-results/
+            appium.log

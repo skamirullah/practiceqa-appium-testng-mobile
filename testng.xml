@@ -1,0 +1,12 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- One device runs one test at a time. To use several devices, run one suite per device (see README). -->
+<suite name="RideGo mobile">
+  <listeners>
+    <listener class-name="com.practiceqa.ridego.listeners.TestListener"/>
+  </listeners>
+  <test name="Regression">
+    <packages>
+      <package name="com.practiceqa.ridego.tests"/>
+    </packages>
+  </test>
+</suite>

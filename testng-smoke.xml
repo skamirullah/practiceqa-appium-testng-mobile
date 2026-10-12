@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="RideGo mobile: smoke">
+  <listeners>
+    <listener class-name="com.practiceqa.ridego.listeners.TestListener"/>
+  </listeners>
+  <test name="Smoke">
+    <groups>
+      <run>
+        <include name="smoke"/>
+      </run>
+    </groups>
+    <packages>
+      <package name="com.practiceqa.ridego.tests"/>
+    </packages>
+  </test>
+</suite>
